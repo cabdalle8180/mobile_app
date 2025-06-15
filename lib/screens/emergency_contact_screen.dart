@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class EmergencyContactScreen extends StatefulWidget {
-  final String userId;
   final Map<String, dynamic> initialData;
 
   const EmergencyContactScreen({
-    super.key,
-    required this.userId,
+    Key? key,
     required this.initialData,
-  });
+  }) : super(key: key);
 
   @override
   State<EmergencyContactScreen> createState() => _EmergencyContactScreenState();
@@ -17,17 +15,22 @@ class EmergencyContactScreen extends StatefulWidget {
 
 class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _relationshipController = TextEditingController();
-  final _phoneController = TextEditingController();
-  bool _isLoading = false;
+  late TextEditingController _nameController;
+  late TextEditingController _relationshipController;
+  late TextEditingController _phoneController;
+  late TextEditingController _addressController;
 
   @override
   void initState() {
     super.initState();
-    _nameController.text = widget.initialData['name'];
-    _relationshipController.text = widget.initialData['relationship'];
-    _phoneController.text = widget.initialData['phone'];
+    _nameController =
+        TextEditingController(text: widget.initialData['name'] ?? '');
+    _relationshipController =
+        TextEditingController(text: widget.initialData['relationship'] ?? '');
+    _phoneController =
+        TextEditingController(text: widget.initialData['phone'] ?? '');
+    _addressController =
+        TextEditingController(text: widget.initialData['address'] ?? '');
   }
 
   @override
@@ -35,166 +38,119 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
     _nameController.dispose();
     _relationshipController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
     super.dispose();
+  }
+
+  void _saveContact() {
+    if (_formKey.currentState!.validate()) {
+      final contactData = {
+        'name': _nameController.text,
+        'relationship': _relationshipController.text,
+        'phone': _phoneController.text,
+        'address': _addressController.text,
+      };
+      Navigator.pop(context, contactData);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Emergency Contact'),
+        title: Text(
+          'Emergency Contact',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Contact Information',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Full Name',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
-                        ),
-                        textCapitalization: TextCapitalization.words,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter the contact name';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _relationshipController,
-                        decoration: const InputDecoration(
-                          labelText: 'Relationship',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.people),
-                        ),
-                        textCapitalization: TextCapitalization.words,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter the relationship';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _phoneController,
-                        decoration: const InputDecoration(
-                          labelText: 'Phone Number',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.phone),
-                          hintText: '+252 XX XXX XXXX',
-                        ),
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter the phone number';
-                          }
-                          if (value.length < 10) {
-                            return 'Please enter a valid phone number';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
+              Text(
+                'Add Emergency Contact',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSubmit,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text(
-                          'Save Changes',
-                          style: TextStyle(fontSize: 16),
-                        ),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  border: OutlineInputBorder(),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the contact name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _relationshipController,
+                decoration: const InputDecoration(
+                  labelText: 'Relationship',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the relationship';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the phone number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _addressController,
+                decoration: const InputDecoration(
+                  labelText: 'Address',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the address';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _saveContact,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text('Save Contact'),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // TODO: Implement actual API call to update emergency contact
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Emergency contact updated successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(
-          context,
-          {
-            'name': _nameController.text,
-            'relationship': _relationshipController.text,
-            'phone': _phoneController.text,
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 }

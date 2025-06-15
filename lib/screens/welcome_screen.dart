@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'user_login_screen.dart';
-import 'police_login_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../services/navigation_service.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -8,100 +8,91 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // App Logo
-              Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.local_police,
-                  size: 80,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.drive_file_rename_outline,
+                  size: 100,
                   color: Colors.white,
                 ),
-              ),
-              const SizedBox(height: 32),
-              // Welcome Message
-              Text(
-                'Welcome to\nPolice License System',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your trusted platform for license management',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-              ),
-              const SizedBox(height: 48),
-              // User Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
+                const SizedBox(height: 24),
+                Text(
+                  'Digital License System',
+                  style: GoogleFonts.poppins(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Your digital driving license solution',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                ElevatedButton(
                   onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UserLoginScreen(),
-                      ),
-                    );
+                    NavigationService.navigateToUserLogin(context);
                   },
-                  icon: const Icon(Icons.person),
-                  label: const Text(
-                    'Continue as User',
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 48,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    'Login',
                     style: TextStyle(fontSize: 18),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () {
+                    NavigationService.navigateToUserRegistration(context);
+                  },
+                  style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 48,
+                      vertical: 16,
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Police Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PoliceLoginScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.local_police),
-                  label: const Text(
-                    'Continue as Police',
+                  child: const Text(
+                    'Register',
                     style: TextStyle(fontSize: 18),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

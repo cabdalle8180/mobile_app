@@ -1,18 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'check_user_screen.dart';
-import 'police_notifications_screen.dart';
-import 'report_violation_screen.dart';
-import 'expiring_licenses_screen.dart';
-import 'police_profile_screen.dart';
+import 'package:provider/provider.dart';
+import '../services/navigation_service.dart';
+import '../services/auth_service.dart';
 
-class PoliceDashboardScreen extends StatelessWidget {
-  final String policeId;
+class PoliceDashboardScreen extends StatefulWidget {
+  const PoliceDashboardScreen({super.key});
 
-  const PoliceDashboardScreen({
-    super.key,
-    required this.policeId,
-  });
+  @override
+  State<PoliceDashboardScreen> createState() => _PoliceDashboardScreenState();
+}
+
+class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
+  Map<String, dynamic> _policeData = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPoliceData();
+    _initializeTestData();
+  }
+
+  Future<void> _loadPoliceData() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final policeId = await authService.getPoliceId();
+
+    if (policeId != null) {
+      setState(() {
+        _policeData = {
+          'name': 'Officer John',
+          'id': policeId,
+          'rank': 'Sergeant',
+          'station': 'Central Police Station',
+          'status': 'On Duty',
+          'badgeNumber': 'B789',
+          'department': 'Traffic',
+          'joinDate': '2020-01-15',
+          'contact': '+252 61 234 5678',
+        };
+      });
+    }
+  }
+
+  Future<void> _initializeTestData() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    await authService.initializeTestData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,118 +54,35 @@ class PoliceDashboardScreen extends StatelessWidget {
         title: Text(
           'Police Dashboard',
           style: GoogleFonts.poppins(
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications),
+            icon: const Icon(Icons.logout),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      PoliceNotificationsScreen(policeId: policeId),
-                ),
-              );
+              Provider.of<AuthService>(context, listen: false).logout();
+              NavigationService.navigateToPoliceLogin(context);
             },
           ),
         ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+      body: RefreshIndicator(
+        onRefresh: _loadPoliceData,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProfileHeader(context),
+              _buildPoliceCard(),
               const SizedBox(height: 24),
-              Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  children: [
-                    _buildDashboardItem(
-                      context,
-                      icon: Icons.search,
-                      title: 'Check User ID',
-                      color: Colors.blue,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                CheckUserScreen(policeId: policeId),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildDashboardItem(
-                      context,
-                      icon: Icons.notifications,
-                      title: 'Notifications',
-                      color: Colors.orange,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                PoliceNotificationsScreen(policeId: policeId),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildDashboardItem(
-                      context,
-                      icon: Icons.report,
-                      title: 'Report Violations',
-                      color: Colors.red,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ReportViolationScreen(policeId: policeId),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildDashboardItem(
-                      context,
-                      icon: Icons.timer,
-                      title: 'Expiring Licenses',
-                      color: Colors.purple,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ExpiringLicensesScreen(policeId: policeId),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildDashboardItem(
-                      context,
-                      icon: Icons.person,
-                      title: 'Police Profile',
-                      color: Colors.green,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                PoliceProfileScreen(policeId: policeId),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
+              _buildQuickActions(),
+              const SizedBox(height: 24),
+              _buildStats(),
+              const SizedBox(height: 24),
+              _buildContactInfo(),
             ],
           ),
         ),
@@ -140,60 +90,186 @@ class PoliceDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context) {
+  Widget _buildPoliceCard() {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [
-              Colors.red,
-              Colors.red.withOpacity(0.8),
-            ],
+          borderRadius: BorderRadius.circular(12),
+          gradient: const LinearGradient(
+            colors: [Colors.blue, Colors.blueAccent],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.local_police,
-                  size: 40,
-                  color: Colors.red,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.white,
+                  child: Text(
+                    _policeData['name']?.toString().substring(0, 1) ?? 'P',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
                 ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _policeData['name'] ?? 'Police Officer',
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _policeData['rank'] ?? 'Rank',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildInfoRow('ID', _policeData['id'] ?? 'N/A'),
+            _buildInfoRow('Badge', _policeData['badgeNumber'] ?? 'N/A'),
+            _buildInfoRow('Station', _policeData['station'] ?? 'N/A'),
+            _buildInfoRow('Status', _policeData['status'] ?? 'N/A'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.search,
+                label: 'Check License',
+                onTap: () => NavigationService.navigateToCheckUser(context),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Police Officer',
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'ID: $policeId',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.white.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.receipt_long,
+                label: 'Issue Fine',
+                onTap: () => NavigationService.navigateToIssueFine(context),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.assessment,
+                label: 'Reports',
+                onTap: () => NavigationService.navigateToPoliceReports(context),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.person,
+                label: 'Profile',
+                onTap: () => NavigationService.navigateToPoliceProfile(context),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 32,
+                color: Colors.blue,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -202,55 +278,169 @@ class PoliceDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDashboardItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: [
-                color,
-                color.withOpacity(0.8),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 40,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+  Widget _buildStats() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Statistics',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
         ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                title: 'Fines Issued',
+                value: '12',
+                icon: Icons.receipt,
+                color: Colors.orange,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildStatCard(
+                title: 'Licenses Checked',
+                value: '45',
+                icon: Icons.search,
+                color: Colors.green,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: color,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Contact Information',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildContactRow(
+                  icon: Icons.phone,
+                  label: 'Phone',
+                  value: _policeData['contact'] ?? 'N/A',
+                ),
+                const Divider(),
+                _buildContactRow(
+                  icon: Icons.business,
+                  label: 'Department',
+                  value: _policeData['department'] ?? 'N/A',
+                ),
+                const Divider(),
+                _buildContactRow(
+                  icon: Icons.calendar_today,
+                  label: 'Join Date',
+                  value: _policeData['joinDate'] ?? 'N/A',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: Colors.blue,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

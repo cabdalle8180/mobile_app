@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'user_dashboard_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../services/navigation_service.dart';
 
 class UserLoginScreen extends StatefulWidget {
   const UserLoginScreen({super.key});
@@ -12,81 +14,15 @@ class UserLoginScreen extends StatefulWidget {
 class _UserLoginScreenState extends State<UserLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _userIdController = TextEditingController();
-  bool _isCapturingFace = false;
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
-  CameraController? _cameraController;
-  List<CameraDescription>? _cameras;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeCamera();
-  }
-
-  Future<void> _initializeCamera() async {
-    _cameras = await availableCameras();
-    if (_cameras != null && _cameras!.isNotEmpty) {
-      _cameraController = CameraController(
-        _cameras![0],
-        ResolutionPreset.medium,
-        enableAudio: false,
-      );
-      await _cameraController!.initialize();
-      if (mounted) setState(() {});
-    }
-  }
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
     _userIdController.dispose();
-    _cameraController?.dispose();
+    _passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _handleFaceCapture() async {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Camera not initialized'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isCapturingFace = true;
-    });
-
-    try {
-      // Capture the image
-      final XFile image = await _cameraController!.takePicture();
-
-      if (!mounted) return;
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Face captured successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Face capture failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isCapturingFace = false;
-        });
-      }
-    }
   }
 
   Future<void> _handleLogin() async {
@@ -96,34 +32,32 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       });
 
       try {
-        // Simulate API call delay
-        await Future.delayed(const Duration(seconds: 1));
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final success = await authService.login(
+          _userIdController.text,
+          _passwordController.text,
+        );
 
-        if (_userIdController.text.isNotEmpty) {
-          if (!mounted) return;
-
-          // Navigate to dashboard
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => UserDashboardScreen(
-                userId: _userIdController.text,
-              ),
+        if (success && mounted) {
+          // Navigate directly to dashboard
+          NavigationService.navigateToUserDashboard(context);
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid credentials'),
+              backgroundColor: Colors.red,
             ),
           );
-        } else {
-          throw Exception('Invalid credentials');
         }
       } catch (e) {
-        if (!mounted) return;
-
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Login failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } finally {
         if (mounted) {
           setState(() {
@@ -137,82 +71,101 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Login'),
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.person,
-                  size: 80,
-                  color: Colors.blue,
-                ),
-                const SizedBox(height: 32),
-                TextFormField(
-                  controller: _userIdController,
-                  decoration: const InputDecoration(
-                    labelText: 'User ID',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your User ID';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                if (_cameraController != null &&
-                    _cameraController!.value.isInitialized)
-                  Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(12),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Welcome Back!',
+                    style: GoogleFonts.poppins(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: CameraPreview(_cameraController!),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sign in to continue',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.grey[600],
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: _isCapturingFace ? null : _handleFaceCapture,
-                  icon: Icon(_isCapturingFace ? Icons.camera_alt : Icons.face),
-                  label: Text(
-                      _isCapturingFace ? 'Capturing Face...' : 'Capture Face'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
+                  const SizedBox(height: 48),
+                  TextFormField(
+                    controller: _userIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'User ID',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your user ID';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                    obscureText: _obscurePassword,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
                     onPressed: _isLoading ? null : _handleLogin,
-                    icon: _isLoading
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: _isLoading
                         ? const SizedBox(
-                            width: 20,
                             height: 20,
+                            width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : const Icon(Icons.login),
-                    label: Text(_isLoading ? 'Logging in...' : 'Login'),
+                        : const Text('Login'),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      // TODO: Implement forgot password
+                    },
+                    child: const Text('Forgot Password?'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
